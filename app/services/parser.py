@@ -1,29 +1,27 @@
-import json
 import requests
 from bs4 import BeautifulSoup
-from pathlib import Path
 
-EXPORT_PATH = Path("export/product.json")
+class KaspiParser:
+    def __init__(self, url: str):
+        self.url = url
 
-def parse_product(url: str) -> dict:
-    r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-    soup = BeautifulSoup(r.text, "html.parser")
+    def parse(self) -> dict:
+        response = requests.get(self.url, headers={"User-Agent": "Mozilla/5.0"})
+        if response.status_code != 200:
+            return {}
 
-    name = soup.select_one("h1[itemprop='name']").get_text(strip=True)
-    category = soup.select_one("a.breadcrumbs__link").get_text(strip=True)
-    rating = soup.select_one("span[itemprop='ratingValue']")
-    reviews = soup.select_one("span[itemprop='reviewCount']")
-    prices = [int(p.get_text(strip=True).replace("₸", "").replace(" ", "")) for p in soup.select(".item__price")]
+        soup = BeautifulSoup(response.text, "html.parser")
+        name = soup.select_one("h1").get_text(strip=True) if soup.select_one("h1") else "Unknown"
+        description = soup.select_one("meta[name='description']")
+        price_el = soup.select_one(".price")
+        description_text = description["content"] if description else ""
+        price = float(price_el.get_text(strip=True).replace("₸", "").replace(" ", "")) if price_el else 0.0
+        images = [img["src"] for img in soup.select("img") if "kaspi.kz" in img["src"]]
 
-    data = {
-        "name": name,
-        "category": category,
-        "min_price": min(prices) if prices else None,
-        "max_price": max(prices) if prices else None,
-        "rating": float(rating.text) if rating else None,
-        "reviews": int(reviews.text) if reviews else None
-    }
-
-    EXPORT_PATH.parent.mkdir(exist_ok=True)
-    EXPORT_PATH.write_text(json.dumps(data, ensure_ascii=False, indent=4))
-    return data
+        return {
+            "kaspi_url": self.url,
+            "name": name,
+            "description": description_text,
+            "price": price,
+            "images": images[:5],  # ограничим
+        }

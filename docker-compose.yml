@@ -2,27 +2,28 @@ version: "3.9"
 
 services:
   db:
-    image: postgres:15
+    image: postgres:16
+    restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: kaspi
+      POSTGRES_PASSWORD: kaspi
       POSTGRES_DB: kaspi
-    volumes:
-      - pg_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
 
-  web:
+  app:
     build: .
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg2://kaspi:kaspi@db:5432/kaspi
     depends_on:
       - db
-    environment:
-      - DATABASE_URL=postgresql+psycopg2://postgres:postgres@db:5432/kaspi
     volumes:
-      - .:/app
+      - .:/code
 
 volumes:
   pg_data:

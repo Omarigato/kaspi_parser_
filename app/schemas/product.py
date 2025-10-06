@@ -1,18 +1,30 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
+from typing import List, Optional
+from uuid import UUID
 
-class ProductBase(BaseModel):
+
+class ProductImageSchema(BaseModel):
+    kaspi_image_url: HttpUrl
+    is_main: bool = False
+
+
+class ShopSchema(BaseModel):
+    kaspi_id: Optional[str]
+    name: Optional[str]
+    phone: Optional[str]
+    address: Optional[str]
+
+
+class ShopProductSchema(BaseModel):
+    price: float
+    availability: str
+
+
+class ProductCreateSchema(BaseModel):
+    kaspi_url: HttpUrl
     name: str
-    category: str
-    min_price: float | None
-    max_price: float | None
-    rating: float | None
-    reviews: int | None
-
-class ProductCreate(ProductBase):
-    pass
-
-class ProductResponse(ProductBase):
-    id: int
-
-    class Config:
-        orm_mode = True
+    description: Optional[str]
+    price: float
+    images: List[ProductImageSchema]
+    shops: Optional[List[ShopSchema]] = []
+    related_urls: Optional[List[HttpUrl]] = []
